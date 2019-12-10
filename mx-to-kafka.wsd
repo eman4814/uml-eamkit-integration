@@ -1,0 +1,12 @@
+@startuml
+left to right direction
+skinparam PackageStyle rectangle
+actor Maximo
+rectangle kafka{
+    Maximo --> (Purchase Requisition) 
+    Maximo --> (Goods Receipt) 
+    Maximo --> (Goods Issue) : send via soap
+    Maximo --> (Stock Transfer) 
+    Maximo --> (Adjusment) 
+} 
+@enduml

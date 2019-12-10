@@ -1,0 +1,39 @@
+@startuml
+(*) -->[start]"[Maximo] cek pr status"
+if "prstatus in ('APPR','WAITCAN')" then
+--> [true] "[Maximo] run script MXPRAPPR"
+-->[invoke pr.wsdl] "[Springboot] kafka-producer"
+--> ===B1===
+-->[create] "log.xml"
+-->[end](*)
+===B1=== -->[send] "[Kafka] message broker"
+' --> ===B2===
+partition Orchestra {
+-->[listen]"[Springboot] kafka-consumer"
+    if "status = 'APPR'" then 
+    -->[true]"insert into tbl pr"
+    -->"insert into tbl prline"
+        if "prlinetype = 'SERVICE'" then
+        -->[true] "insert into tbl prsubline"
+        -->===S1===
+        else 
+        -->[false] "else"
+        -->===S1===
+        endif
+        --> "Transform PrItems and Service"
+        --> "Transform PrAcctAssign"
+        --> "Transform PrAccasVal"
+        --> "invoke to SAP ZMMPR"
+        --> "invoke to Maximo log"
+        ' -->[end](*)         
+    else
+    -->[false]"Invoke SAP ZMMPRDel"
+    --> "invoke to Maximo log"
+    -right->[end](*)
+    endif
+}
+else
+--> [false] "Nothing to do"
+-->[end](*)
+endif
+@enduml

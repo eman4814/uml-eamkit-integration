@@ -1,0 +1,21 @@
+@startuml
+left to right direction
+skinparam PackageStyle rectangle
+actor Maximo
+actor SAP
+rectangle kafka{
+    (Item / Material Master) <-- SAP
+    (Chart of Account) <-- SAP
+    (Vendor) <-- SAP
+    (Cost Center) <-- SAP
+    (Internal Order) <-- SAP
+    (WBS) <-- SAP
+    Maximo --> (Purchase Requisition)
+    (Purchase Order) <-- SAP
+    Maximo --> (Goods Receipt)
+    Maximo --> (Goods Issue)
+    Maximo --> (Stock Transfer)
+    Maximo --> (Adjusment)
+} 
+
+@enduml
