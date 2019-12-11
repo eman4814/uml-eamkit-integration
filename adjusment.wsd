@@ -1,0 +1,45 @@
+@startuml
+|Maximo|
+start
+-> start;
+:cek invtrans type;
+if (TRANSTYPE='RECBALADJ') then (true)
+    :run script MXRECBALADJ;
+else (false) 
+stop    
+endif
+|Springboot|
+->invoke adjusment.wsdl;
+:kafka producer \nreceive data;
+fork
+:create log.xml;
+stop
+fork again
+:send to kafka;
+end fork;
+|Kafka|
+:store to topic mx-adj;
+|Springboot|
+partition Orchestra {
+:kafka-consumer \nlisten from topic mx-adj;
+if (TRANSTYPE='RECBALADJ') then (true)
+    :insert into tbl adjusment;
+    :Transform adjusment;
+    fork
+    :create log.xml;
+    stop
+    fork again
+    :invoke to ZMM_PI wsdl;
+    end fork
+    |SAP|
+    :process FM ZMM_PI;
+    |Springboot|    
+    :invoke to MXSAP_MXSAPINVTRANSQInterface.wsdl;
+    |Maximo|
+    :process MXSAP_MXSAPINVTRANSQInterface;
+    stop
+endif    
+|Springboot|
+stop
+}
+@enduml 
