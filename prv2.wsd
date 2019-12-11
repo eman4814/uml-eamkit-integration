@@ -1,0 +1,60 @@
+@startuml
+|Maximo|
+start
+-> start;
+:cek pr status;
+if (prstatus in ('APPR','WAITCAN')) then (true)
+    :run script MXPRAPPR;
+else (false) 
+stop    
+endif
+|Springboot|
+->invoke pr.wsdl;
+:kafka producer \nreceive data;
+fork
+:create log.xml;
+stop
+fork again
+:send to kafka;
+end fork;
+|Kafka|
+:store to topic mx-pr;
+|Springboot|
+partition Orchestra {
+:kafka-consumer \nlisten from topic mx-pr;
+if (status = 'APPR') then (true)
+    :insert into tbl pr;
+    repeat
+    :insert into tbl prline;
+    if (prlinetype = 'SERVICE') then (yes)
+        repeat
+        :insert into tbl prsubline;
+        repeat while (more data?) is (true)
+    endif
+    repeat while (more data ?) is (true)
+    :Transform PrItems and Service;
+    :Transform PrAcctAssign;
+    :Transform PrAccasVal;
+    :invoke to ZMM_PR wsdl;
+    |SAP|
+    :process FM ZMM_PR;
+    |Springboot|    
+    :invoke to MXSAP_MXSAPINTMSGLOGInterface.wsdl;
+    |Maximo|
+    :process MXSAP_MXSAPINTMSGLOGInterface;
+    stop
+elseif (status = 'WAITCAN') then (true)
+    |Springboot|
+    :Invoke ZMM_PR_DEL wsdl;
+    |SAP|
+    :process FM ZMM_PR_DEL;
+    |Springboot|
+    :invoke to MXSAP_MXSAPINTMSGLOGInterface.wsdl;
+    |Maximo|
+    :process MXSAP_MXSAPINTMSGLOGInterface;
+    stop
+endif    
+}
+|Springboot|
+stop
+@enduml 
