@@ -35,7 +35,12 @@ if (status = 'APPR') then (true)
     :Transform PrItems and Service;
     :Transform PrAcctAssign;
     :Transform PrAccasVal;
+    fork
+    :log.xml;
+    stop
+    fork again
     :invoke to ZMM_PR wsdl;
+    end fork
     |SAP|
     :process FM ZMM_PR;
     |Springboot|    
