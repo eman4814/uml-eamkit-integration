@@ -1,0 +1,79 @@
+@startuml
+|Maximo|
+start
+-> start;
+:cek servrectrans status;
+if (status ='COMP') then (true)
+    :run script MXSERVRECTRANSCOMP;
+else (false) 
+stop    
+endif
+|Springboot|
+->invoke servrectrans.wsdl;
+:kafka producer \nreceive data;
+fork
+:create log.xml;
+stop
+fork again
+:send to kafka;
+end fork;
+|Kafka|
+:store to topic mx-servrectrans;
+|Springboot|
+partition Orchestra {
+:kafka-consumer \nlisten from topic mx-servrectrans;
+if (status ='COMP') then (true)
+    :insert into tbl servrectrans;
+    repeat
+    :insert into tbl servrecsubline;
+        repeat
+        :insert into tbl posubline;
+        repeat while (more data?) is (true)
+    repeat while (more data ?) is (true)
+    :Transform ESService;
+    :Transform ESAcctAssign;
+    :Transform ESHeader;
+    :Transform ESSrvAccasVal;
+    :Get View ES;
+    if(issutype='return' and refesnum != '') then (true)
+        fork
+        :log.xml;
+        stop
+        fork again
+        :invoke ZMM_ES_DELETE.wsdl;
+        end fork
+        |SAP|
+        :process FM ZMM_ES_DELETE;
+        |Springboot|    
+        :invoke to MXSAP_MXSAPINTMSGLOGInterface.wsdl;
+        |Maximo|
+        :process MXSAP_MXSAPINTMSGLOGInterface;
+        stop
+    elseif(issutype='return' and refesnum = '') then (true)
+        |Springboot|
+        :setDescription = 'refesnum is null, please correct it!';
+        :invoke to MXSAP_MXSAPINTMSGLOGInterface.wsdl;
+        |Maximo|
+        :process MXSAP_MXSAPINTMSGLOGInterface;
+        stop     
+    else (else)
+        |Springboot|
+        fork
+        :log.xml;
+        stop
+        fork again
+        :invoke ZMM_ES.wsdl;
+        end fork
+        |SAP|
+        :process FM ZMM_ES;
+        |Springboot|    
+        :invoke to MXSAP_MXSAPINTMSGLOGInterface.wsdl;
+        |Maximo|
+        :process MXSAP_MXSAPINTMSGLOGInterface;
+        stop
+    endif
+endif
+|Springboot|
+stop    
+}
+@enduml 
