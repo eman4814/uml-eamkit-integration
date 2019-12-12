@@ -1,0 +1,83 @@
+@startuml
+|Maximo|
+start
+-> start;
+:cek invuse status;
+if (status='COMPLETE') then (true)
+    :run script MXMATUSETRANSCOMP;
+else (false) 
+stop    
+endif
+|Springboot|
+->invoke matusetrans.wsdl;
+:kafka producer \nreceive data;
+fork
+:create log.xml;
+stop
+fork again
+:send to kafka;
+end fork;
+|Kafka|
+:store to topic mx-matusetrans;
+|Springboot|
+partition Orchestra {
+:kafka-consumer \nlisten from topic mx-matusetrans;
+if (status='COMPLETE') then (true)
+    repeat
+    :insert into tbl matusetrans;
+    repeat while(more data?) is (true)
+    :getView;
+    if(refdoc = '') then (true)
+        fork
+        :create log.xml;
+        stop
+        fork again
+        :invoke to ZMM_GM wsdl;
+        end fork
+        |SAP|
+        :process FM ZMM_GM;
+        |Springboot|
+        :get SAPResponse;
+        fork
+        :invoke to MXSAP_MXSAPINVTRANSQInterface.wsdl;
+        |Maximo|
+        :process MXSAP_MXSAPINVTRANSQInterface;
+        stop
+        |Springboot|
+        fork again
+        if(materialdocument != '') then (true)
+            repeat
+            :getItem;
+            :invoke to ZMM_IC wsdl;
+            |SAP|
+            :process FM ZMM_IC;
+            |Springboot|
+            :get SAPICResponse;
+            :invoke to MXSAP_MXSAPINVCOSTInterfaceQ.wsdl;
+            |Maximo|
+            :process MXSAP_MXSAPINVCOSTInterfaceQ;
+            |Springboot|
+            repeat while(more data?) is (true)
+        endif
+        end fork
+    else (else)
+        |Springboot|
+        fork
+        :create log.xml;
+        stop
+        fork again
+        :invoke to ZMM_GM_DEL wsdl;
+        end fork
+        |SAP|
+        :process FM ZMM_GM_DEL;
+        |Springboot|    
+        :invoke to MXSAP_MXSAPINVTRANSQInterface.wsdl;
+        |Maximo|
+        :process MXSAP_MXSAPINVTRANSQInterface;
+        stop
+    endif
+endif    
+|Springboot|
+stop
+}
+@enduml 
