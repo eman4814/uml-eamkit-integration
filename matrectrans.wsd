@@ -1,0 +1,63 @@
+@startuml
+|Maximo|
+start
+-> start;
+:send collection of matrectrans by button action;
+|Springboot|
+->invoke matrectrans.wsdl;
+:kafka producer \nreceive data;
+fork
+:create log.xml;
+stop
+fork again
+:send to kafka;
+end fork;
+|Kafka|
+:store to topic mx-matrectrans;
+|Springboot|
+partition Orchestra {
+:kafka-consumer \nlisten from topic mx-matrectrans;
+if (((MOVEMENTTYPE IN ('103', '104', '105', '106', '122', '124', '543') AND ISSUE = '0') OR (MOVEMENTTYPE IN ('101','102') AND ISSUE = '1'))) then (true)
+    repeat
+    :insert into tbl matrectrans;
+    repeat while (more data ?) is (true)
+    :Get View;
+    :Mapping field;
+    fork
+    :log.xml;
+    stop
+    fork again
+    :invoke ZMM_GM.wsdl;
+    end fork
+    |SAP|
+    :process FM ZMM_GM;
+    |Springboot|
+    :get SAPResponse;
+    fork
+    |Springboot|    
+    :invoke to MXSAP_MXSAPINTMSGLOGInterface.wsdl;
+    |Maximo|
+    :process MXSAP_MXSAPINTMSGLOGInterface;
+    stop
+    |Springboot|
+    fork again
+    if(materialdocument != '') then (true)
+        repeat
+        :getItem;
+        :invoke to ZMM_IC wsdl;
+        |SAP|
+        :process FM ZMM_IC;
+        |Springboot|
+        :get SAPICResponse;
+        :invoke to MXSAP_MXSAPINVCOSTInterfaceQ.wsdl;
+        |Maximo|
+        :process MXSAP_MXSAPINVCOSTInterfaceQ;
+        |Springboot|
+        repeat while(more data?) is (true)
+    endif
+    end fork    
+endif
+|Springboot|
+stop    
+}
+@enduml 
