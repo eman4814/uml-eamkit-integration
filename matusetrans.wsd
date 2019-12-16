@@ -39,9 +39,10 @@ if (status='COMPLETE') then (true)
         |Springboot|
         :get SAPResponse;
         fork
-        :invoke to MXSAP_MXSAPINVTRANSQInterface.wsdl;
+        |Springboot|    
+        :invoke to MXSAP_MXSAPINTMSGLOGInterface.wsdl;
         |Maximo|
-        :process MXSAP_MXSAPINVTRANSQInterface;
+        :process MXSAP_MXSAPINTMSGLOGInterface;
         stop
         |Springboot|
         fork again
@@ -71,9 +72,9 @@ if (status='COMPLETE') then (true)
         |SAP|
         :process FM ZMM_GM_DEL;
         |Springboot|    
-        :invoke to MXSAP_MXSAPINVTRANSQInterface.wsdl;
+        :invoke to MXSAP_MXSAPINTMSGLOGInterface.wsdl;
         |Maximo|
-        :process MXSAP_MXSAPINVTRANSQInterface;
+        :process MXSAP_MXSAPINTMSGLOGInterface;
         stop
     endif
 endif    
