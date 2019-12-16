@@ -24,7 +24,8 @@ partition Orchestra {
 :kafka-consumer \nlisten from topic mx-adj;
 if (TRANSTYPE='RECBALADJ') then (true)
     :insert into tbl adjusment;
-    :Transform adjusment;
+    :getView adjusment;
+    :mapping field;
     fork
     :create log.xml;
     stop
