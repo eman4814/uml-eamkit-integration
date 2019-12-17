@@ -1,0 +1,63 @@
+@startuml
+|Maximo|
+start
+-> start;
+:send collection of matrectrans by button action;
+|Springboot|
+->invoke transfersloc.wsdl;
+:kafka producer \nreceive data;
+fork
+:create log.xml;
+stop
+fork again
+:send to kafka;
+end fork;
+|Kafka|
+:store to topic mx-transfersloc;
+|Springboot|
+partition Orchestra {
+:kafka-consumer \nlisten from topic mx-transfersloc;
+if ((MOVEMENTTYPE IN ('311', '351', '101', '301') AND ISSUE = '0' AND ISSUETYPE NOT IN('SHIPRECEIPT'))) then (true)
+    repeat
+    :insert into tbl transfersloc;
+    repeat while (more data ?) is (true)
+    :Get View;
+    :Mapping field;
+    fork
+    :log.xml;
+    stop
+    fork again
+    :invoke ZMM_GM.wsdl;
+    end fork
+    |SAP|
+    :process FM ZMM_GM;
+    |Springboot|
+    :get SAPResponse;
+    fork
+    |Springboot|    
+    :invoke to MXSAP_MXSAPINTMSGLOGInterface.wsdl;
+    |Maximo|
+    :process MXSAP_MXSAPINTMSGLOGInterface;
+    stop
+    |Springboot|
+    fork again
+    if(materialdocument != '') then (true)
+        :getItems;
+        repeat
+        :invoke to ZMM_IC wsdl;
+        |SAP|
+        :process FM ZMM_IC;
+        |Springboot|
+        :get SAPICResponse;
+        :invoke to MXSAP_MXSAPINVCOSTInterfaceQ.wsdl;
+        |Maximo|
+        :process MXSAP_MXSAPINVCOSTInterfaceQ;
+        |Springboot|
+        repeat while(more data?) is (true)
+    endif
+    end fork    
+endif
+|Springboot|
+stop    
+}
+@enduml 
