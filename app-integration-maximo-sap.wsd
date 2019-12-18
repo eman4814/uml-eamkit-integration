@@ -1,0 +1,27 @@
+@startuml
+!include <cloudinsight/kafka>
+!include <cloudinsight/mysql>
+!include <cloudinsight/java>
+!include <cloudinsight/python>
+!include <cloudinsight/desktop>
+
+title Application Integration Maximo to SAP
+
+skinparam monochrome true
+
+rectangle "<$python>\nmaximo" as maximo
+package "Middleware"{
+rectangle "<$java>\nkafka-producer" as kafkaproducer
+queue "<$kafka>\nkafka" as kafka
+rectangle "<$java>\nkafka-consumer" as kafkaconsumer
+database "<$mysql>\nmysql" as mysql
+}
+rectangle "<$desktop>\nsap" as sap
+
+maximo -> kafkaproducer
+kafkaproducer -> kafka
+kafka <- kafkaconsumer
+kafkaconsumer <--> mysql
+kafkaconsumer -> sap
+
+@enduml
